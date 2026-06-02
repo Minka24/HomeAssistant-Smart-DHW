@@ -1,5 +1,5 @@
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.const import UnitOfTemperature
 
 from .const import DOMAIN
 from .coordinator import DHWCoordinator
@@ -20,8 +20,8 @@ class DHWRequiredTempSensor(SensorEntity):
     def __init__(self, coordinator):
         self.coordinator = coordinator
         self._attr_name = "DHW Required Charge Temperature"
-        self._attr_native_unit_of_measurement = TEMP_CELSIUS
-        self._attr_device_class = "temperature"
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
 
     @property
     def native_value(self):
