@@ -1,0 +1,14 @@
+{
+  "domain": "smart_dhw",
+  "name": "Smart DHW (Data-driven Hot Water)",
+  "version": "0.1.0",
+  "documentation": "https://example.com",
+  "requirements": [
+    "numpy",
+    "scikit-learn"
+  ],
+  "dependencies": ["recorder"],
+  "codeowners": [],
+  "config_flow": true,
+  "iot_class": "local_polling"
+}
