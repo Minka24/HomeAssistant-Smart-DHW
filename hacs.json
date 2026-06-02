@@ -1,0 +1,9 @@
+{
+  "name": "Smart DHW (Data-driven Hot Water)",
+  "version": "0.1.0",
+  "content_in_root": false,
+  "domains": [
+    "sensor"
+  ],
+  "zip_release": false
+}
