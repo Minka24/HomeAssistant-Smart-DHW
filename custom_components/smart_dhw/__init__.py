@@ -8,9 +8,5 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass, entry):
     hass.data[DOMAIN][entry.entry_id] = entry.data
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(
-            entry, "sensor"
-        )
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
