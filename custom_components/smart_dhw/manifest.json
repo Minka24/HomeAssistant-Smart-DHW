@@ -3,10 +3,7 @@
   "name": "Smart DHW (Data-driven Hot Water)",
   "version": "1.0.1-a1",
   "documentation": "https://example.com",
-  "requirements": [
-    "numpy",
-    "scikit-learn"
-  ],
+  "requirements": [],
   "dependencies": ["recorder"],
   "codeowners": [],
   "config_flow": true,

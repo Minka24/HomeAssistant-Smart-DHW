@@ -1,5 +1,3 @@
-import numpy as np
-
 WATER_HEAT_CAPACITY = 1.163  # Wh per liter per °C
 
 
