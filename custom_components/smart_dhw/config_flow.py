@@ -2,14 +2,8 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-try:
-    from homeassistant.helpers import selector
-    ENTITY_SELECTOR = lambda: selector.EntitySelector(selector={"domain": "sensor"})
-except Exception:
-    selector = None
-    ENTITY_SELECTOR = lambda: vol.All(str)
 
-from .const import DOMAIN, CONF_MIN_TEMP, CONF_MAX_TEMP
+from .const import DOMAIN, CONF_TEMP_SENSOR, CONF_STATUS_SENSOR, CONF_MIN_TEMP, CONF_MAX_TEMP
 
 CONF_VOLUME_L = "volume_l"
 
@@ -26,8 +20,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required("temp_sensor"): ENTITY_SELECTOR(),
-                vol.Required("status_sensor"): ENTITY_SELECTOR(),
+                vol.Required(CONF_TEMP_SENSOR): vol.All(str),
+                vol.Required(CONF_STATUS_SENSOR): vol.All(str),
                 vol.Optional(CONF_VOLUME_L, default=200.0): vol.Coerce(float),
                 vol.Optional(CONF_MIN_TEMP, default=40.0): vol.Coerce(float),
                 vol.Optional(CONF_MAX_TEMP, default=60.0): vol.Coerce(float),
