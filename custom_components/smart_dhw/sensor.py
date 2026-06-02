@@ -6,13 +6,24 @@ from .coordinator import DHWCoordinator
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = DHWCoordinator(hass, entry.data)
-    await coordinator.async_config_entry_first_refresh()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    import logging
+    _LOGGER = logging.getLogger(__name__)
+    
+    try:
+        _LOGGER.debug(f"Setting up sensor platform with config: {entry.data}")
+        coordinator = DHWCoordinator(hass, entry.data)
+        _LOGGER.debug("Coordinator created, refreshing...")
+        await coordinator.async_config_entry_first_refresh()
+        _LOGGER.debug(f"Coordinator refreshed, data: {coordinator.data}")
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    async_add_entities([
-        DHWRequiredTempSensor(coordinator),
-    ], True)
+        async_add_entities([
+            DHWRequiredTempSensor(coordinator),
+        ], True)
+        _LOGGER.debug("Sensor entity added")
+    except Exception as err:
+        _LOGGER.error(f"Error setting up sensor: {err}", exc_info=True)
+        raise
 
 
 class DHWRequiredTempSensor(SensorEntity):

@@ -1,8 +1,12 @@
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+import logging
+
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_STATUS_SENSOR, CONF_TEMP_SENSOR
 from .dhw import WATER_HEAT_CAPACITY, energy_from_delta
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class DHWCoordinator(DataUpdateCoordinator):
@@ -13,52 +17,66 @@ class DHWCoordinator(DataUpdateCoordinator):
 
         super().__init__(
             hass,
-            logger=None,
+            logger=_LOGGER,
             name="smart_dhw",
             update_interval=None,
         )
 
     async def _async_update_data(self):
-        temp_entity = self.config[CONF_TEMP_SENSOR]
-        status_entity = self.config[CONF_STATUS_SENSOR]
+        try:
+            temp_entity = self.config[CONF_TEMP_SENSOR]
+            status_entity = self.config[CONF_STATUS_SENSOR]
+            _LOGGER.debug(f"Fetching history for {temp_entity} and {status_entity}")
 
-        history = await self.hass.services.async_call(
-            "recorder",
-            "get_history",
-            {
-                "entity_id": [temp_entity, status_entity],
-                "minimal_response": True,
-                "end_time": dt_util.now(),
-                "limit": 1000,
-            },
-            blocking=True,
-            return_response=True,
-        )
+            history = await self.hass.services.async_call(
+                "recorder",
+                "get_history",
+                {
+                    "entity_id": [temp_entity, status_entity],
+                    "minimal_response": True,
+                    "end_time": dt_util.now(),
+                    "limit": 1000,
+                },
+                blocking=True,
+                return_response=True,
+            )
+            _LOGGER.debug(f"History received: {type(history)}")
 
-        temp_states = self._states_for_entity(history, temp_entity)
-        status_states = self._states_for_entity(history, status_entity)
+            temp_states = self._states_for_entity(history, temp_entity)
+            status_states = self._states_for_entity(history, status_entity)
+            _LOGGER.debug(f"Temp states: {len(temp_states)}, Status states: {len(status_states)}")
 
-        current_temp = self._last_temp(temp_states)
-        if current_temp is None or len(status_states) < 2:
-            return self._empty()
+            current_temp = self._last_temp(temp_states)
+            _LOGGER.debug(f"Current temp: {current_temp}")
+            if current_temp is None or len(status_states) < 2:
+                _LOGGER.debug("Returning empty: not enough data")
+                return self._empty()
 
-        hc_times = self._hc_event_times(status_states)
-        if len(hc_times) < 2:
-            return {"required_temp": round(current_temp)}
+            hc_times = self._hc_event_times(status_states)
+            _LOGGER.debug(f"HC event times: {len(hc_times)}")
+            if len(hc_times) < 2:
+                result = {"required_temp": round(current_temp)}
+                _LOGGER.debug(f"Not enough HC events, returning: {result}")
+                return result
 
-        energy_since_last = self._energy_since(temp_states, hc_times[-1])
-        predicted_interval = self._predict_interval_kwh(temp_states, hc_times)
+            energy_since_last = self._energy_since(temp_states, hc_times[-1])
+            predicted_interval = self._predict_interval_kwh(temp_states, hc_times)
+            _LOGGER.debug(f"Energy since last: {energy_since_last}, Predicted interval: {predicted_interval}")
 
-        required_temp = self._required_charge_temp(
-            current_temp,
-            predicted_interval,
-            energy_since_last,
-            self.config["volume_l"],
-            self.config["min_temp"],
-            self.config["max_temp"],
-        )
+            required_temp = self._required_charge_temp(
+                current_temp,
+                predicted_interval,
+                energy_since_last,
+                self.config["volume_l"],
+                self.config["min_temp"],
+                self.config["max_temp"],
+            )
+            _LOGGER.debug(f"Calculated required temp: {required_temp}")
 
-        return {"required_temp": required_temp}
+            return {"required_temp": required_temp}
+        except Exception as err:
+            _LOGGER.error(f"Error in _async_update_data: {err}", exc_info=True)
+            raise UpdateFailed(f"Coordinator update failed: {err}")
 
     # -----------------------------
     # Helpers
